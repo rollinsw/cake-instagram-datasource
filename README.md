@@ -72,12 +72,14 @@ $this->redirect($url);
 ?>
 ```
 
-Once the user has authenticated your client, he will be sent back to the URL specified in _redirect_url_, but with the query parameter _code_ attached. To authenticate the Instagram API, you need to send this code to the data source. This will contact Instagram and retrieve an access token.
+Once the user has authenticated your client, he will be sent back to the URL specified in _redirect_url_, but with the query parameter _code_ attached. To authenticate the Instagram API, you need to send this code to the data source. This will contact Instagram and retrieve a response object including an access token and a user object.
 
 ```php
 <?php
 $code = $this->request->query['code'];
-$token = $instagram->authenticate($code);
+$response = $instagram->authenticate($code);
+$token = $response->access_token;
+$user = $response->user;
 ?>
 ```
 
