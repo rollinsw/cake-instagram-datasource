@@ -51,7 +51,7 @@ class InstagramSource extends DataSource {
 			return $this->config['access_token'];
 		} else {
 			// Get authentication URL
-			return 'https://instagram.com/oauth/authorize/?client_id=' . $this->config['client_id'] . '&redirect_uri=' . $this->config['redirect_url'] . '&response_type=code';
+			return 'https://instagram.com/oauth/authorize/?client_id=' . $this->config['client_id'] . '&redirect_uri=' . urlencode($this->config['redirect_url']) . '&response_type=code';
 		}
 	}
 
