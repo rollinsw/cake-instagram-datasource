@@ -66,8 +66,10 @@ class InstagramSource extends DataSource {
 	public function create($action, $fields = null, $values = null) {
 		// Combine the fields and values
 		$params = array();
-		foreach ($fields as $k => $v) {
-			$params[$v] = $values[$k];
+		if (!empty($fields) && !empty($values)) {
+			foreach ($fields as $k => $v) {
+				$params[$v] = !empty($values[$k]) ? $values[$k] : null;
+			}
 		}
 
 		$url = $this->url($action);
