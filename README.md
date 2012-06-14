@@ -39,27 +39,24 @@ The response data is parsed from JSON, so a generic object is returned from the 
 
 ### Examples
 
-**Search for a tag called "test"**
+```php
+<?php
 
-```
+// Search for a tag called "test"
 $instagram = ConnectionManager::getDataSource('instagram');
 $tags = $instagram->read('tags/search', array(
 	'q' => 'test'
 ));
-```
 
-**Delete a comment**
-
-```
+// Delete a comment
 $instagram = ConnectionManager::getDataSource('instagram');
 $result = $instagram->delete('media/1234/comment', 4321);
-```
 
-**Add a like (requires authentication)**
-
-```
+// Add a like (requires authentication)
 $instagram = ConnectionManager::getDataSource('instagram');
 $result = $instagram->create('media/1234/like');
+
+?>
 ```
 
 ### Authorization
