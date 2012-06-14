@@ -1,171 +1,93 @@
 # Instagram API
 
-Provides a connection and function calls to the Instagram API.
+Provides a DataSource for connecting to the Instagram API. The data source allows you to get and modify entries as well as provides means to
 
 ## Installation
 
-_@todo_
+To use the Instagram API you need to have a client setup. See [the client manager](http://instagram.com/developer/clients/manage/) to setup a new client or use an existing one. The API uses the client ID, client secret and redirect URL to authenticate with the Instagram API. Note that most of the general read actions do not require that an Instagram user is logged in, so there may never be a need to authenticate the client.
+
+### app/Config/bootstrap.php
+
+```php
+<?php
+CakePlugin::load('InstagramApi');
+?>
+```
+
+### app/Config/database.php
+
+```php
+<?php
+class DATABASE_CONFIG {
+
+	public $sample = array(
+		'datasource'    => 'InstagramApi.InstagramSource',
+		'client_id'     => '' // from your Instagram client
+		'client_secret' => '' // from your Instagram client
+		'redirect_url'  => '' // from your Instagram client
+	);
+
+}
+?>
+```
 
 ## Usage
 
-To use the Instagram API you need to have a client setup. See [the client manager](http://instagram.com/developer/clients/manage/) to setup a new client or use an existing one. The API uses the client ID and client secret to ensure that all connections are to the correct client.
+The data source works as a wrapper around the API end points specified in the [Instagram API documentation](http://instagram.com/developer/endpoints/users/) and is used by directly calling the CRUD methods in the data source with the specified endpoint and an array of parameters. However, the client ID (or access token if the connection has been autherized) is automatically added to the parameters sent to the API.
 
-```php
-$instagram = new \Instagram\Connection($clientId, $clientSecret);
+The response data is parsed from JSON, so a generic object is returned from the methods (or false in the case of an error).
+
+### Examples
+
+**Search for a tag called "test"**
+
+```
+$instagram = ConnectionManager::getDataSource('instagram');
+$tags = $instagram->read('tags/search', array(
+	'q' => 'test'
+));
+```
+
+**Delete a comment**
+
+```
+$instagram = ConnectionManager::getDataSource('instagram');
+$result = $instagram->delete('media/1234/comment', 4321);
+```
+
+**Add a like (requires authentication)**
+
+```
+$instagram = ConnectionManager::getDataSource('instagram');
+$result = $instagram->create('media/1234/like');
 ```
 
 ### Authorization
 
-Some of the API end points requires it to be authorized with a specific user, which is done by redirecting the user to an authorization URL where the user will either allow or refuse access to the client. The authorization URL is generated based on a redirect URL, which is specified in the Instagram client manager, but which allows you to add query parameters to the URL. For example, if the redirect URL you've specified in the client manager is **http://example.com/app/** you can redirect the authorized user to **http://example.com/app/?foo=bar&herp=derp**, allowing for customized redirection.
+Authorization with the Instagram API requires two steps, much like the Facebook API. You need to have set up the client_id, client_secret and redirect_url in the database configuration (see above) and they must match the ones in your Instagram client manager.
 
-If the user allows the client access, it will redirect with the parameter **code** appended to the URL. In the example above, it would redirect to **http://example.com/app/?foo=bar&herp=derp&code=XXXX**.
-
+First, you call the _InstagramSource::authenticate()_ method with no parameters to get the URL to send the user to.
 ```php
-if (!empty($this->request->query['code'])) {
-	$instagram->authorize($redirectURL, $this->request->query['code']);
-} elseif (!$instagram->authorized()) {
-	$url = $instagram->authorizeURL($redirectURL);
-	$this->redirect($url);
-}
+<?php
+$instagram = ConnectionManager::getDataSource('instagram');
+$url = $instagram->authenticate();
+$this->redirect($url);
+?>
 ```
 
-### Config
-
-Using the static class methods to fetch content from Instagram requires that the client information is defined in the config variables.
+Once the user has authenticated your client, he will be sent back to the URL specified in _redirect_url_, but with the query parameter _code_ attached. To authenticate the Instagram API, you need to send this code to the data source. This will contact Instagram and retrieve an access token.
 
 ```php
-Configure::write('Instagram.clientId', 'cdd97394669e453dabf1671cfadd7152');
-Configure::write('Instagram.clientSecret', '62f381929d584c15b66bd18395f5a786');
+<?php
+$code = $this->request->query['code'];
+$token = $instagram->authenticate($code);
+?>
 ```
 
-_@todo: It may be useful to be able to set the instance of the Instagram\Connection class so that you can choose to set the client id and secret in the config, or to create an instance of your own. It'd also make it easier to test the API end points if you could subclass the connection class to avoid calling the Instagram API._
-
-## Class Reference
-
-### Connection
-
-Used to provide a connection to the Instagram API. It can be used directly to request get/post/delete methods, but should be avoided in preference of the other classes. To provide a connection you need a client ID and secret, which are retrieved from the [client manager](http://instagram.com/developer/clients/manage/).
-
-#### Methods
-
-##### __construct ( _string_, _string_ )
-
- * _**$clientId** (string) ID of the client_
- * _**$clientSecret** (string) Secret of the client_
-
-Provides a connection to the Instragram API. If the **$clientId** and **$clientSecret** aren't provided, it uses ones stored in the Config using the keys _"Instagram.clientId"_ and _"Instagram.clientSecret"_ respectively.
-
-##### authorize ( string, string )
-
-##### authorized
-
-Checks whether the client has been authorized with an Instagram user.
-
-##### authorizeURL ( string )
-
- * **$redirectURL** (string) The URL to redirect to after authorization
-
-Creates a URL to send the user to so that he/she can authorize your client. Once authorized, the user will be sent back to the URL specified in **$redirectURL** with the query parameter **code**.
-
-##### delete ( string, _array_, _boolean_ )
-
-##### get ( string, _array_, _boolean_ )
-
-##### post ( string, _array_, _boolean_ )
-
-#### Example
+The data source doesn't store the token, so you'll need to save it (in the database or session or wherever) and when you want to authorize your client with Instagram you call the method with the token and _true_ as the other parameter, which will authorize the API.
 
 ```php
-$instagram = new \Instagram\Connection($clientId, $clientSecret);
-$result = $instagram->get('media/popular');
+<?php
+$instagram->authorize($token, true);
+?>
 ```
-
-### Comments
-
-Getting and posting comments by the currently logged in user.
-
-#### Methods
-
-##### delete ( int, int )
-
-##### get ( int )
-
-##### post ( int, string )
-
-### Geographies
-
-#### Methods
-
-##### recent ( int, array )
-
-### Likes
-
-#### Methods
-
-##### delete ( int )
-
-##### get ( int )
-
-##### post ( int )
-
-### Locations
-
-#### Methods
-
-##### get ( int )
-
-##### recent ( int, array )
-
-##### search ( array )
-
-### Media
-
-#### Methods
-
-##### get ( int )
-
-##### popular
-
-##### search ( array )
-
-### Relationships
-
-#### Methods
-
-##### add ( int, string )
-
-##### followedBy ( int )
-
-##### follows ( int )
-
-##### get ( int )
-
-##### requestedBy
-
-### Tags
-
-#### Methods
-
-##### get ( string )
-
-##### recent ( string, array )
-
-##### search ( string )
-
-### Users
-
-#### Methods
-
-##### feed ( array )
-
-##### get ( int )
-
-##### liked ( array )
-
-##### recent ( int, array )
-
-##### search ( string, array )
-
-## Notes
-
- * @todo: This API is by no means complete; there are a lot of holes in the implementation and only a few of the API calls have actually been tested beyond the superficial test cases.
