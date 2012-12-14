@@ -3,19 +3,23 @@
 /**
  * Provides a generic connection to the Instagram API.
  *
- * @package InstagramApi
+ * @package InstagramDatasource
  * @author Michael Enger <mien@nodesagency.no>
  */
 class InstagramSource extends DataSource {
+
+/**
+ * Properties
+ */
 	public $description = 'Instagram API Source';
 
-	/**
-	 * Authenticate the Instagram connection with a user.
-	 *
-	 * @param string  $code     (optional) Code to use when authenticating
-	 * @oaram boolean $complete (optional) Whether the authentication is complete
-	 * @return mixed
-	 */
+/**
+ * Authenticate the Instagram connection with a user.
+ *
+ * @param string  $code     (optional) Code to use when authenticating
+ * @oaram boolean $complete (optional) Whether the authentication is complete
+ * @return mixed
+ */
 	public function authenticate($code = null, $complete = false) {
 		if ($complete) {
 			// Set access token
@@ -55,94 +59,81 @@ class InstagramSource extends DataSource {
 		}
 	}
 
-	/**
-	 * Used to create new records. The "C" CRUD.
-	 *
-	 * @param string $action  The name of the action
-	 * @param array  $fields  (optional) List of fields to be saved
-	 * @param array  $values  (optional) List of values to save
-	 * @return mixed
-	 */
-	public function create($action, $fields = null, $values = null) {
-		// Combine the fields and values
-		$params = array();
-		if (!empty($fields) && !empty($values)) {
-			foreach ($fields as $k => $v) {
-				$params[$v] = !empty($values[$k]) ? $values[$k] : null;
-			}
-		}
-
-		$url = $this->url($action);
-
-		$curl = curl_init($url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curl, CURLOPT_POST, true);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $params);
-
-		$response = json_decode(curl_exec($curl));
-		curl_close($curl);
-
-		return $response;
+/**
+ * Used to create new records. The "C" CRUD.
+ *
+ * @param Model $model  The Model to be created.
+ * @param array $fields (optional) List of fields to be saved
+ * @param array $values (optional) List of values to save
+ * @return mixed
+ */
+	public function create(Model $model, $fields = null, $values = null) {
+		die('@todo: create');
 	}
 
-	/**
-	 * Delete a record(s) in the datasource.
-	 *
-	 * @param string $action The name of the action
-	 * @param mixed  $id     (optional) ID of the model to delete
-	 */
-	public function delete($action, $id = null) {
-		$url = $this->url($action . '/' . $id);
-
-		$curl = curl_init($url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'DELETE');
-
-		$response = json_decode(curl_exec($curl));
-		curl_close($curl);
-
-		return $response;
+/**
+ * Delete a record(s) in the datasource.
+ *
+ * @param Model $model The model class having record(s) deleted
+ * @param mixed $id    (optional) ID of the model to delete
+ */
+	public function delete(Model $model, $id = null) {
+		die('@todo: delete');
 	}
 
-	/**
-	 * Used to read records from the Datasource. The "R" in CRUD
-	 *
-	 * @param string $action    The name of the action
-	 * @param array  $queryData (optional) List of query data used to find the data you want
-	 * @return mixed
-	 */
-	public function read($action, $queryData = array()) {
-		$url = $this->url($action, $queryData);
-
-		$curl = curl_init($url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-		$response = json_decode(curl_exec($curl));
-		curl_close($curl);
-
-		return $response;
+/**
+ * Returns a Model description (metadata) or null if none found.
+ *
+ * @param Model|string $model
+ * @return array Metadata for the $model
+ */
+	public function describe($model) {
+		die('@todo: describe');
 	}
 
-	/**
-	 * Update a record(s) in the datasource.
-	 *
-	 * @param string $action The name of the action
-	 * @param array  $fields (optional) List of fields to be updated
-	 * @param array  $values (optional) List of values to update the $fields to
-	 * @return boolean
-	 */
-	public function update($action, $fields = null, $values = null) {
-		return false; // Instagram does not support updating entries
+/**
+ * Caches/returns cached results for child instances
+ *
+ * @param mixed $data
+ * @return array Sources available in this datasource
+ */
+	public function listSources($data = null) {
+		return null; // caching is disabled (for now)
+    }
+
+/**
+ * Used to read records from the Datasource. The "R" in CRUD
+ *
+ * @param Model   $model     The model being read
+ * @param array   $queryData (optional) List of query data used to find the data you want
+ * @param boolean $recursive (optional) Whether to make the read recursive
+ * @return mixed
+ */
+	public function read(Model $model, $queryData = array(), $recursive = null) {
+		die('@todo: read');
 	}
 
-	/**
-	 * Get a URL to the Instagram API
-	 *
-	 * @param string $action Action (API endpoint) to contact
-	 * @param array  $params (optional) List of paramters to send to the URL
-	 * @return string
-	 */
-	public function url($action, $params = array()) {
+/**
+ * Update a record(s) in the datasource.
+ *
+ * @param Model $model      Instance of the model class being updated
+ * @param array $fields     (optional) List of fields to be updated
+ * @param array $values     (optional) List of values to update the $fields to
+ * @param array $contitions (optional) Conditions for the update
+ * @return boolean
+ */
+	public function update(Model $model, $fields = null, $values = null, $conditions = null) {
+		die('@todo: update');
+	}
+
+/**
+ * Get a URL to the Instagram API
+ *
+ * @param string $action Action (API endpoint) to contact
+ * @param array  $params (optional) List of paramters to send to the URL
+ * @return string
+ */
+	protected function _url($action, $params = array()) {
 		$url = 'https://api.instagram.com/v1/' . $action;
 
 		// Authenticate URL
