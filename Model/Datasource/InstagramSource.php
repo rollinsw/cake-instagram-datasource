@@ -9,7 +9,9 @@
 class InstagramSource extends DataSource {
 
 /**
- * Properties
+ * Description of the source.
+ *
+ * @var string
  */
 	public $description = 'Instagram API Source';
 
@@ -68,7 +70,13 @@ class InstagramSource extends DataSource {
  * @return mixed
  */
 	public function create(Model $model, $fields = null, $values = null) {
-		die('@todo: create');
+		switch (get_class($model)) {
+		case 'Media':
+			throw new InstagramSourceException('Media entries do not support create');
+			break;
+		default:
+			throw new InstagramSourceException('Unhandled model type: ' . get_class($model));
+		}
 	}
 
 /**
@@ -78,17 +86,13 @@ class InstagramSource extends DataSource {
  * @param mixed $id    (optional) ID of the model to delete
  */
 	public function delete(Model $model, $id = null) {
-		die('@todo: delete');
-	}
-
-/**
- * Returns a Model description (metadata) or null if none found.
- *
- * @param Model|string $model
- * @return array Metadata for the $model
- */
-	public function describe($model) {
-		die('@todo: describe');
+		switch (get_class($model)) {
+		case 'Media':
+			throw new InstagramSourceException('Media entries do not support delete');
+			break;
+		default:
+			throw new InstagramSourceException('Unhandled model type: ' . get_class($model));
+		}
 	}
 
 /**
@@ -110,7 +114,39 @@ class InstagramSource extends DataSource {
  * @return mixed
  */
 	public function read(Model $model, $queryData = array(), $recursive = null) {
-		die('@todo: read');
+		$data = false;
+
+		switch (get_class($model)) {
+		case 'Media':
+			if (empty($queryData['conditions'])) {
+				$result = $this->_request('GET', 'media/popular');
+				$data = $this->_wrapResults($result['data'], $model->alias);
+			} else {
+				$conditions = $this->_extractFields($queryData['conditions'], 'Media');
+				if (!empty($conditions['id'])) {
+					$id = $conditions['id'];
+					unset($conditions['id']);
+					$data = array(
+						array(
+							$model->alias => $this->_request('GET', 'media/' . $id, $conditions)
+						)
+					);
+				} elseif (!empty($conditions['tag'])) {
+					$tag = $conditions['tag'];
+					unset($conditions['tag']);
+					$result = $this->_request('GET', 'tags/' . $tag . '/media/recent', $conditions);
+					$data = $this->_wrapResults($result['data'], $model->alias);
+				} else {
+					$result = $this->_request('GET', 'media/search', $conditions);
+					$data = $this->_wrapResults($result['data'], $model->alias);
+				}
+			}
+			break;
+		default:
+			throw new InstagramSourceException('Unhandled model type: ' . get_class($model));
+		}
+
+		return $data;
 	}
 
 /**
@@ -123,7 +159,65 @@ class InstagramSource extends DataSource {
  * @return boolean
  */
 	public function update(Model $model, $fields = null, $values = null, $conditions = null) {
-		die('@todo: update');
+		switch (get_class($model)) {
+		case 'Media':
+			throw new InstagramSourceException('Media entries do not support update');
+			break;
+		default:
+			throw new InstagramSourceException('Unhandled model type: ' . get_class($model));
+		}
+	}
+
+/**
+ * Get the list of fields (for example from the conditions array) based on the model name.
+ *
+ * @param array  $fields Array of keys/values
+ * @param string $model  Name of the model to extract fields for
+ * @return array
+ */
+	protected function _extractFields($fields, $model) {
+		$temp = array();
+		foreach ($fields as $key => $value) {
+			if (preg_match('/^' . $model . '\.\w+/', $key)) { // ModelName.fieldName
+				$key = substr($key, strlen($model) + 1);
+				$temp[$key] = $value;
+			} elseif (strpos($key, '.') === false) { // fieldName
+				$temp[$key] = $value;
+			}
+		}
+
+		return $temp;
+	}
+
+/**
+ * Request an action from the Instagram API.
+ *
+ * @param string $type   HTTP request type
+ * @param string $action Instagram API action
+ * @param array  $params (optional) Parameters to send with the request
+ * @return array
+ */
+	protected function _request($type, $action, $params = array()) {
+		switch ($type) {
+		case 'GET':
+			$curl = curl_init($this->_url($action, $params));
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			$response = json_decode(curl_exec($curl), true);
+			curl_close($curl);
+			break;
+		case 'DELETE':
+		case 'POST':
+		case 'PUT':
+			// @todo
+		default:
+			throw new InstagramSourceException('Unandled request type: ' . $type);
+		}
+
+		if (!empty($response['meta']['error_type'])) {
+			throw new InstagramSourceException(sprintf('Instagram API failed with %s (error code %d): %s', $response['meta']['error_type'], $response['meta']['code'], $response['meta']['error_message']));
+		}
+
+		return $response;
 	}
 
 /**
@@ -152,4 +246,26 @@ class InstagramSource extends DataSource {
 
 		return $url;
 	}
+
+/**
+ * Wrap a list of results in a model.
+ *
+ * @param array  $results List of results
+ * @param string $model   Name of the model
+ * @return array
+ */
+	protected function _wrapResults($results, $model) {
+		$temp = array();
+		foreach ($results as $entry) {
+			$temp[] = array(
+				$model => $entry
+			);
+		}
+		return $temp;
+	}
 }
+
+/**
+ * Exception wrapper to differentiate it from other exceptions.
+ */
+class InstagramSourceException extends Exception {}
