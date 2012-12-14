@@ -116,6 +116,7 @@ class InstagramSource extends DataSource {
 	public function read(Model $model, $queryData = array(), $recursive = null) {
 		$data = array();
 		$limit = !empty($queryData['limit']) ? $queryData['limit'] : 0;
+		$offset = !empty($queryData['offset']) ? $queryData['offset'] : 0;
 
 		switch (get_class($model)) {
 		case 'Media':
@@ -141,6 +142,16 @@ class InstagramSource extends DataSource {
 			if (!empty($data['data'])) {
 				$pagination = !empty($data['pagination']) ? $data['pagination'] : null;
 				$data = $this->_wrapResults($data['data'], $model->alias);
+
+				// Apply offset
+				if (!empty($offset)) {
+					if ($offset < count($data)) {
+						$data = array_slice($data, $offset);
+					} else {
+						$queryData['offset'] = $offset - count($data);
+						$data = $this->read($model, $queryData);
+					}
+				}
 
 				// Apply limit
 				if (!empty($limit)) {
