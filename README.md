@@ -1,21 +1,35 @@
 # Instagram API
 
-Provides a DataSource for connecting to the Instagram API. The data source allows you to get and modify entries as well as provides means to
+Provides a DataSource for connecting to the Instagram API. As of now the datasource only supports getting media entries (photos), but hopefully we can expand on that soon.
 
 ## Installation
 
 To use the Instagram API you need to have a client setup. See [the client manager](http://instagram.com/developer/clients/manage/) to setup a new client or use an existing one. The API uses the client ID, client secret and redirect URL to authenticate with the Instagram API. Note that most of the general read actions do not require that an Instagram user is logged in, so there may never be a need to authenticate the client.
 
-### app/Config/bootstrap.php
+### 1. Get the source
 
+Clone the project to an appropriately named plugin folder:
+```
+git clone git://github.com/nodesagency/cake-instagram-datasource.git app/Plugin/InstagramDatasource
+```
+
+Or add it as a submodule to your pre-existing git repository.
+```
+git submodule add git://github.com/nodesagency/cake-instagram-datasource.git app/Plugin/InstagramDatasource
+```
+
+### 2. Add the plugin to your project
+
+**app/Config/bootstrap.php**
 ```php
 <?php
 CakePlugin::load('InstagramApi');
 ?>
 ```
 
-### app/Config/database.php
+### 3. Configure the DataSource
 
+**app/Config/database.php**
 ```php
 <?php
 class DATABASE_CONFIG {
@@ -33,29 +47,40 @@ class DATABASE_CONFIG {
 
 ## Usage
 
-The data source works as a wrapper around the API end points specified in the [Instagram API documentation](http://instagram.com/developer/endpoints/users/) and is used by directly calling the CRUD methods in the data source with the specified endpoint and an array of parameters. However, the client ID (or access token if the connection has been autherized) is automatically added to the parameters sent to the API.
+The data source attempts to wrap the [Instagram API endpoints ](http://instagram.com/developer/endpoints/) to CakePHP-style models so you can use the ```find()```, ```save()``` and ```delete()``` methods as you normally would. However, the endpoints don't handle the usual parameters (limit, order, etc) so each model acts independendtly.
 
-The response data is parsed from JSON, so a generic object is returned from the methods (or false in the case of an error).
+### Media
 
-### Examples
+The Media model is a wrapper for the media endpoints, providing access to the media entries (photographs) in the Instagram API. Calling ```find()``` on this model uses the [/media/search](http://instagram.com/developer/endpoints/media/) action, unless an id or tag is specified in the conditions. If no conditions are specified it will retrieve the popular media entries.
+
+**Note that the Instragram API doesn't support creating, editing or deleting media entries**
+
+#### Examples
 
 ```php
 <?php
 
-// Search for a tag called "test"
-$instagram = ConnectionManager::getDataSource('instagram');
-$tags = $instagram->read('tags/search', array(
-	'q' => 'test'
+// Get the latest popular entries
+$entries = $this->Media->find('all');
+
+// Get a specific media entry by ID
+$entries = $this->Media->find('first', array(
+	'conditions' => array('id' => $id)
 ));
 
-// Delete a comment
-$instagram = ConnectionManager::getDataSource('instagram');
-$result = $instagram->delete('media/1234/comment', 4321);
+// Search for media items by a specific tag and retrieve 100 entries
+$entries = $this->Media->find('all', array(
+	'conditions' => array('tag' => $tag),
+	'limit' => 100
+));
 
-// Add a like (requires authentication)
-$instagram = ConnectionManager::getDataSource('instagram');
-$result = $instagram->create('media/1234/like');
-
+// Search for media items within a geographical area
+$entries = $this->Media->find('all', array(
+	'conditions' => array(
+		'lat' => $lat,
+		'lng' => $lng
+	)
+));
 ?>
 ```
 

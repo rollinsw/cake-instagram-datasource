@@ -1,89 +1,65 @@
 <?php
+App::uses('InstagramSource', 'InstagramDatasource.Model/Datasource');
+App::uses('Media', 'InstagramDatasource.Model');
 
 /**
  * InstagramSourceTestCase
  */
 class InstagramSourceTestCase extends CakeTestCase {
 
-	/**
-	 * setUp
-	 */
+/**
+ * setUpBeforeClass
+ */
+	public static function setUpBeforeClass() {
+		parent::setUpBeforeClass();
+
+		// My test client; please don't abuse
+		ConnectionManager::create('instagram_test', array(
+			'datasource' => 'InstagramDatasource.InstagramSource',
+			'client_id' => 'd58ea0b1eb4d4c008c9fb63fc82a7e95',
+			'client_secret' => '634d7f65d0334b8fb277c14d720910a5',
+			'redirect_url' => 'http://localhost'
+		));
+	}
+
+/**
+ * setUp
+ */
 	public function setUp() {
-		// @todo: create data source
 		parent::setUp();
+		$this->InstagramSource = ConnectionManager::getDataSource('instagram_test');
+		$this->Media = ClassRegistry::init('InstagramDatasource.Media');
 	}
-
-	/**
-	 * tearDown
-	 */
-	public function tearDown() {
-		parent::tearDown();
-	}
-
-	// Tests
 
 	public function testAuthenticate() {
-		$instagram = ConnectionManager::getDataSource('instagram');
-
 		// Get the authentication URL
-		$result = $instagram->authenticate();
+		$result = $this->InstagramSource->authenticate();
 		$this->assertStringStartsWith('https://instagram.com', $result, 'Authenticate URL does not point to instagram.com');
-		$this->assertContains($instagram->config['client_id'], $result, 'Authenticate URL does have the client ID');
+		$this->assertContains($this->InstagramSource->config['client_id'], $result, 'Authenticate URL does have the client ID');
 
 		// Send bogus authentication code
-		$result = $instagram->authenticate('hello world');
+		$result = $this->InstagramSource->authenticate('hello world');
 		$this->assertFalse($result, 'Bogus authentication code != false');
 	}
 
 	public function testCreate() {
-		$instagram = ConnectionManager::getDataSource('instagram');
-
-		// Like a random image
-		$result = $instagram->create('media/1234/likes');
-		$this->assertIsA($result, 'stdClass', 'Random media like result is not an object');
-		$this->assertTrue(isset($result->meta), 'Random media like result does not contain meta data');
-		$this->assertEqual(400, $result->meta->code, 'Random media like result was successful');
-		$this->assertTrue(empty($result->data), 'Random media like result has data');
+		$this->expectException('InstagramSourceException');
+		$this->InstagramSource->create($this->Media);
 	}
 
 	public function testDelete() {
-		$instagram = ConnectionManager::getDataSource('instagram');
-
-		// Delete a random comment
-		$result = $instagram->delete('media/1234/comment', 4321);
-		$this->assertNull($result, 'Random comment delete result != null');
+		$this->expectException('InstagramSourceException');
+		$this->InstagramSource->delete($this->Media);
 	}
 
 	public function testRead() {
-		$instagram = ConnectionManager::getDataSource('instagram');
-
-		// Getting a tag
-		$result = $instagram->read('tags/test');
-		$this->assertIsA($result, 'stdClass', 'Tag read result is not an object');
-		$this->assertTrue(isset($result->meta), 'Tag read result does not contain meta data');
-		$this->assertEqual(200, $result->meta->code, 'Tag read result was not successful');
-		$this->assertTrue(!empty($result->data), 'Tag read result has no data');
-
-		// Searching for a user
-		$result = $instagram->read('users/search', array(
-			'q' => 'test'
-		));
-		$this->assertIsA($result, 'stdClass', 'User search result is not an object');
-		$this->assertTrue(isset($result->meta), 'User search result does not contain meta data');
-		$this->assertEqual(200, $result->meta->code, 'User search result was not successful');
-		$this->assertTrue(!empty($result->data), 'User search result has no data');
-
-		// Bogus action
-		$result = $instagram->read('foo/bar');
-		$this->assertNull($result, 'Bogus URL result != null');
+		$result = $this->InstagramSource->read($this->Media);
+		$this->assertNotEmpty($result);
 	}
 
 	public function testUpdate() {
-		$instagram = ConnectionManager::getDataSource('instagram');
-
-		// Update shouldn't work
-		$result = $instagram->update('media');
-		$this->assertFalse($result);
+		$this->expectException('InstagramSourceException');
+		$this->InstagramSource->update($this->Media);
 	}
 
 }
