@@ -114,39 +114,61 @@ class InstagramSource extends DataSource {
  * @return mixed
  */
 	public function read(Model $model, $queryData = array(), $recursive = null) {
-		$data = false;
+		$data = array();
+		$limit = !empty($queryData['limit']) ? $queryData['limit'] : 0;
 
 		switch (get_class($model)) {
 		case 'Media':
 			if (empty($queryData['conditions'])) {
-				$result = $this->_request('GET', 'media/popular');
-				$data = $this->_wrapResults($result['data'], $model->alias);
+				$data = $this->_request('GET', 'media/popular');
 			} else {
 				$conditions = $this->_extractFields($queryData['conditions'], 'Media');
 				if (!empty($conditions['id'])) {
 					$id = $conditions['id'];
 					unset($conditions['id']);
 					$data = array(
-						array(
-							$model->alias => $this->_request('GET', 'media/' . $id, $conditions)
-						)
+						'data' => $this->_request('GET', 'media/' . $id, $conditions)
 					);
 				} elseif (!empty($conditions['tag'])) {
 					$tag = $conditions['tag'];
 					unset($conditions['tag']);
-					$result = $this->_request('GET', 'tags/' . $tag . '/media/recent', $conditions);
-					$data = $this->_wrapResults($result['data'], $model->alias);
+					$data = $this->_request('GET', 'tags/' . $tag . '/media/recent',  $conditions);
 				} else {
-					$result = $this->_request('GET', 'media/search', $conditions);
-					$data = $this->_wrapResults($result['data'], $model->alias);
+					$data = $this->_request('GET', 'media/search', $conditions);
 				}
+			}
+
+			if (!empty($data['data'])) {
+				$pagination = !empty($data['pagination']) ? $data['pagination'] : null;
+				$data = $this->_wrapResults($data['data'], $model->alias);
+
+				// Apply limit
+				if (!empty($limit)) {
+					if ($limit < count($data)) {
+						$data = array_slice($data, 0, $limit);
+					} elseif ($limit > count($data)) {
+						$queryData['limit'] = $limit - count($data);
+						if (!empty($pagination['next_max_tag_id'])) {
+							$queryData['conditions']['max_tag_id'] = $pagination['next_max_tag_id'];
+						} elseif (!empty($pagination['next_max_timestamp'])) {
+							$queryData['conditions']['max_timestamp'] = $pagination['next_max_timestamp'];
+						} elseif (!empty($pagination['next_max_id'])) {
+							$queryData['conditions']['max_id'] = $pagination['next_max_id'];
+						}
+						$data = array_merge($data, $this->read($model, $queryData));
+					}
+				}
+			} else {
+				$data = false;
 			}
 			break;
 		default:
 			throw new InstagramSourceException('Unhandled model type: ' . get_class($model));
 		}
 
-		return $data;
+		return !empty($data)
+			? $data
+			: false;
 	}
 
 /**
@@ -240,6 +262,10 @@ class InstagramSource extends DataSource {
 		// Add params
 		$i = 0;
 		foreach ($params as $key => $value) {
+			if (empty($value)) {
+				continue;
+			}
+
 			$url .= (0 !== $i ? '&' : '?') . urlencode($key) . '=' . urlencode($value);
 			$i++;
 		}

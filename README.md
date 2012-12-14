@@ -55,7 +55,7 @@ The Media model is a wrapper for the media endpoints, providing access to the me
 
 **Note that the Instragram API doesn't support creating, editing or deleting media entries**
 
-### Examples
+#### Examples
 
 ```php
 <?php
@@ -68,14 +68,18 @@ $entries = $this->Media->find('first', array(
 	'conditions' => array('id' => $id)
 ));
 
-// Search for media items by a specific tag
+// Search for media items by a specific tag and retrieve 100 entries
 $entries = $this->Media->find('all', array(
-	'conditions' => array('tag' => $tag)
+	'conditions' => array('tag' => $tag),
+	'limit' => 100
 ));
 
-// Generic search for media items
+// Search for media items within a geographical area
 $entries = $this->Media->find('all', array(
-	'conditions' => array('min_timestamp' => $timestamp)
+	'conditions' => array(
+		'lat' => $lat,
+		'lng' => $lng
+	)
 ));
 ?>
 ```
