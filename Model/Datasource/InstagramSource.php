@@ -46,7 +46,7 @@ class InstagramSource extends DataSource {
 			$response = json_decode(curl_exec($curl));
 			curl_close($curl);
 
-			if (!empty($response->code) && 400 === $response->code) {
+			if (empty($response) || (!empty($response->code) && 400 === $response->code)) {
 				return false;
 			}
 
