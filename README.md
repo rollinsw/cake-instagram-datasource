@@ -23,7 +23,7 @@ git submodule add git://github.com/nodesagency/cake-instagram-datasource.git app
 **app/Config/bootstrap.php**
 ```php
 <?php
-CakePlugin::load('InstagramApi');
+CakePlugin::load('InstagramDatasource');
 ?>
 ```
 
@@ -35,7 +35,7 @@ CakePlugin::load('InstagramApi');
 class DATABASE_CONFIG {
 
 	public $sample = array(
-		'datasource'    => 'InstagramApi.InstagramSource',
+		'datasource'    => 'InstagramDatasource.InstagramSource',
 		'client_id'     => '' // from your Instagram client
 		'client_secret' => '' // from your Instagram client
 		'redirect_url'  => '' // from your Instagram client
