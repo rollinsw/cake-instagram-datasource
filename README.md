@@ -1,6 +1,6 @@
-# Instagram API
+# Instagram Datasource
 
-Provides a DataSource for connecting to the Instagram API. As of now the datasource only supports getting media entries (photos), but hopefully we can expand on that soon.
+Provides a Datasource for connecting to the Instagram API. As of now the datasource only supports getting media entries (photos), but hopefully we can expand on that soon.
 
 ## Installation
 
@@ -27,7 +27,7 @@ CakePlugin::load('InstagramDatasource');
 ?>
 ```
 
-### 3. Configure the DataSource
+### 3. Configure the Datasource
 
 **app/Config/database.php**
 ```php
