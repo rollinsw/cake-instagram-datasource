@@ -1,6 +1,6 @@
-# Instagram API
+# Instagram Datasource
 
-Provides a DataSource for connecting to the Instagram API. As of now the datasource only supports getting media entries (photos), but hopefully we can expand on that soon.
+Provides a Datasource for connecting to the Instagram API. As of now the datasource only supports getting media entries (photos), but hopefully we can expand on that soon.
 
 ## Installation
 
@@ -22,27 +22,36 @@ git submodule add git://github.com/nodesagency/cake-instagram-datasource.git app
 
 **app/Config/bootstrap.php**
 ```php
-<?php
-CakePlugin::load('InstagramApi');
-?>
+CakePlugin::load('InstagramDatasource');
 ```
 
-### 3. Configure the DataSource
+### 3. Configure the Datasource
+
+The datasource can be configured in the database file.
 
 **app/Config/database.php**
 ```php
-<?php
 class DATABASE_CONFIG {
 
 	public $sample = array(
-		'datasource'    => 'InstagramApi.InstagramSource',
+		'datasource'    => 'InstagramDatasource.InstagramSource',
 		'client_id'     => '' // from your Instagram client
 		'client_secret' => '' // from your Instagram client
 		'redirect_url'  => '' // from your Instagram client
 	);
 
 }
-?>
+```
+
+Alternatively, it can be added to the ```ConnectionManager``` manually.
+
+```php
+ConnectionManager::add('instagram', array(
+	'datasource'    => 'InstagramDatasource.InstagramSource',
+	'client_id'     => '' // from your Instagram client
+	'client_secret' => '' // from your Instagram client
+	'redirect_url'  => '' // from your Instagram client
+));
 ```
 
 ## Usage
@@ -58,8 +67,6 @@ The Media model is a wrapper for the media endpoints, providing access to the me
 #### Examples
 
 ```php
-<?php
-
 // Get the latest popular entries
 $entries = $this->Media->find('all');
 
@@ -81,7 +88,6 @@ $entries = $this->Media->find('all', array(
 		'lng' => $lng
 	)
 ));
-?>
 ```
 
 ### Authorization
@@ -90,28 +96,22 @@ Authorization with the Instagram API requires two steps, much like the Facebook 
 
 First, you call the _InstagramSource::authenticate()_ method with no parameters to get the URL to send the user to.
 ```php
-<?php
 $instagram = ConnectionManager::getDataSource('instagram');
 $url = $instagram->authenticate();
 $this->redirect($url);
-?>
 ```
 
 Once the user has authenticated your client, he will be sent back to the URL specified in _redirect_url_, but with the query parameter _code_ attached. To authenticate the Instagram API, you need to send this code to the data source. This will contact Instagram and retrieve a response object including an access token and a user object.
 
 ```php
-<?php
 $code = $this->request->query['code'];
 $response = $instagram->authenticate($code);
 $token = $response->access_token;
 $user = $response->user;
-?>
 ```
 
 The data source doesn't store the token, so you'll need to save it (in the database or session or wherever) and when you want to authorize your client with Instagram you call the method with the token and _true_ as the other parameter, which will authorize the API.
 
 ```php
-<?php
 $instagram->authorize($token, true);
-?>
 ```
