@@ -48,8 +48,8 @@ Alternatively, it can be added to the ```ConnectionManager``` manually.
 ```php
 ConnectionManager::add('instagram', array(
 	'datasource'    => 'InstagramDatasource.InstagramSource',
-	'client_id'     => '' // from your Instagram client
-	'client_secret' => '' // from your Instagram client
+	'client_id'     => '', // from your Instagram client
+	'client_secret' => '', // from your Instagram client
 	'redirect_url'  => '' // from your Instagram client
 ));
 ```
