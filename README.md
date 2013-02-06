@@ -88,6 +88,11 @@ $entries = $this->Media->find('all', array(
 		'lng' => $lng
 	)
 ));
+
+// Search for media items by Instagram location id
+$entries = $this->Media->find('all', array(
+	'conditions' => array('location_id' => $location_id)
+));
 ```
 
 ### Authorization

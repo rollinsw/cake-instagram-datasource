@@ -130,6 +130,10 @@ class InstagramSource extends DataSource {
 					$data = array(
 						'data' => $this->_request('GET', 'media/' . $id, $conditions)
 					);
+				} elseif (!empty($conditions['location_id'])) {
+					$location_id = $conditions['location_id'];
+					unset($conditions['location_id']);
+					$data = $this->_request('GET', 'locations/' . $location_id . '/media/recent',  $conditions);
 				} elseif (!empty($conditions['tag'])) {
 					$tag = $conditions['tag'];
 					unset($conditions['tag']);
@@ -166,7 +170,12 @@ class InstagramSource extends DataSource {
 						} elseif (!empty($pagination['next_max_id'])) {
 							$queryData['conditions']['max_id'] = $pagination['next_max_id'];
 						}
-						$data = array_merge($data, $this->read($model, $queryData));
+						
+						if (!empty($queryData['conditions']['max_tag_id']) OR 
+							!empty($queryData['conditions']['max_timestamp']) OR 
+							!empty($queryData['conditions']['max_id'])) {
+							$data = array_merge($data, $this->read($model, $queryData));
+						}
 					}
 				}
 			} else {
