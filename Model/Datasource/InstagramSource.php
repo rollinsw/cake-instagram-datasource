@@ -171,8 +171,8 @@ class InstagramSource extends DataSource {
 							$queryData['conditions']['max_id'] = $pagination['next_max_id'];
 						}
 						
-						if (!empty($queryData['conditions']['max_tag_id']) OR 
-							!empty($queryData['conditions']['max_timestamp']) OR 
+						if (!empty($queryData['conditions']['max_tag_id']) || 
+							!empty($queryData['conditions']['max_timestamp']) || 
 							!empty($queryData['conditions']['max_id'])) {
 							$data = array_merge($data, $this->read($model, $queryData));
 						}
